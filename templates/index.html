@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Weather Insights</title>
+    <link rel="stylesheet" href="/static/style.css?v=6">
+    <script src="/static/script.js?v=6" defer></script>
+</head>
+<body>
+    <main class="container">
+        <header class="top-bar">
+            <section class="intro">
+                <p class="eyebrow">Daily weather planner</p>
+                <h1>SkyAI Forecast</h1>
+            </section>
+
+            <section class="theme-panel" aria-label="Theme preferences">
+                <div class="theme-group">
+                    <span>Theme</span>
+                    <div class="theme-options" id="theme-options">
+                        <button type="button" class="theme-swatch ocean" data-theme="ocean" aria-label="Ocean theme" title="Ocean"></button>
+                        <button type="button" class="theme-swatch sunset" data-theme="sunset" aria-label="Sunset theme" title="Sunset"></button>
+                        <button type="button" class="theme-swatch forest" data-theme="forest" aria-label="Forest theme" title="Forest"></button>
+                        <button type="button" class="theme-swatch night" data-theme="night" aria-label="Night theme" title="Night"></button>
+                    </div>
+                </div>
+
+                <div class="theme-group compact">
+                    <span>Accent</span>
+                    <input type="color" id="accent-color" value="#76f2cc" aria-label="Accent color">
+                    <button type="button" id="reset-theme" class="icon-button" aria-label="Reset theme" title="Reset theme">Reset</button>
+                </div>
+            </section>
+        </header>
+
+        <form id="weather-form" class="input-group">
+            <div class="city-field">
+                <label for="city">City</label>
+                <input
+                    type="text"
+                    id="city"
+                    name="city"
+                    placeholder="Tokyo"
+                    autocomplete="off"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                    aria-controls="city-suggestions"
+                    required
+                >
+                <div id="city-suggestions" class="suggestions hidden" role="listbox"></div>
+            </div>
+
+            <label for="date">Date</label>
+            <input type="date" id="date" name="date" required>
+
+            <button type="submit">Get forecast</button>
+        </form>
+
+        <div id="loader" class="loader hidden" role="status">Loading forecast...</div>
+        <section id="result" class="result-card empty" aria-live="polite">
+            <p>Enter a city and date to see the forecast.</p>
+        </section>
+    </main>
+</body>
+</html>
