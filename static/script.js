@@ -1,4 +1,5 @@
 const THEME_STORAGE_KEY = 'skyai-theme';
+const CITY_ERROR_MESSAGE = 'Please enter a valid city name using letters, spaces, commas, periods, hyphens, or apostrophes.';
 const THEME_DEFAULTS = {
     ocean: '#76f2cc',
     sunset: '#ffbf69',
@@ -92,9 +93,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const city = cityInput.value.trim();
         const date = dateInput.value;
+        const cityError = validateCityInput(city);
 
         if (!city || !date) {
             renderMessage(resultDiv, 'Please enter both a city and a date.', true);
+            return;
+        }
+
+        if (cityError) {
+            hideSuggestions();
+            renderMessage(resultDiv, cityError, true);
             return;
         }
 
@@ -124,8 +132,13 @@ document.addEventListener('DOMContentLoaded', () => {
             searchController = null;
         }
 
-        if (query.length < 2) {
+        if (!query) {
             hideSuggestions();
+            return;
+        }
+
+        if (validateCityInput(query)) {
+            renderSuggestionMessage(CITY_ERROR_MESSAGE);
             return;
         }
 
@@ -140,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (cityInput.value.trim() === query) {
-                    renderCitySuggestions(data.cities || []);
+                    renderCitySuggestions(data.cities || [], query);
                 }
             } catch (error) {
                 if (error.name !== 'AbortError') {
@@ -152,12 +165,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 250);
     }
 
-    function renderCitySuggestions(cities) {
+    function renderCitySuggestions(cities, query) {
         citySuggestions = cities;
         activeSuggestionIndex = -1;
 
         if (!cities.length) {
-            hideSuggestions();
+            renderSuggestionMessage(`No city found for "${query}". Check the spelling.`);
             return;
         }
 
@@ -176,6 +189,15 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
         suggestionsBox.classList.remove('hidden');
         cityInput.setAttribute('aria-expanded', 'true');
+    }
+
+    function renderSuggestionMessage(message) {
+        citySuggestions = [];
+        activeSuggestionIndex = -1;
+        suggestionsBox.innerHTML = `<div class="suggestion-message">${escapeHtml(message)}</div>`;
+        suggestionsBox.classList.remove('hidden');
+        cityInput.setAttribute('aria-expanded', 'true');
+        cityInput.removeAttribute('aria-activedescendant');
     }
 
     function selectCity(city) {
@@ -354,6 +376,26 @@ function metric(label, value, unit) {
 
 function cityDetails(city) {
     return [city.admin1, city.country].filter(Boolean).join(', ');
+}
+
+function validateCityInput(value) {
+    const city = value.trim();
+
+    if (!city) {
+        return 'Please enter a city name.';
+    }
+
+    const letters = city.match(/\p{L}/gu) || [];
+
+    if (letters.length < 2) {
+        return 'City name must include at least two letters.';
+    }
+
+    if (!/^[\p{L}\s,.'-]+$/u.test(city)) {
+        return CITY_ERROR_MESSAGE;
+    }
+
+    return '';
 }
 
 function initTheme(themeOptions, accentColor) {

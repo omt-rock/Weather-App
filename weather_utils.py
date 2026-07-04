@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+import unicodedata
 
 import requests
 
@@ -68,7 +69,7 @@ class WeatherLookupError(Exception):
 
 def search_cities(query, count=6):
     query = (query or "").strip()
-    if len(query) < 2:
+    if not _is_valid_city_query(query):
         return []
 
     data = _get_json(
@@ -119,22 +120,65 @@ def _parse_date(date_value):
 
 def _geocode_city(city):
     city = (city or "").strip()
-    if not city:
-        raise WeatherLookupError("Please enter a city.")
+    _validate_city_query(city)
 
     data = _get_json(
         GEOCODE_URL,
         {
             "name": city,
-            "count": 1,
+            "count": 8,
             "language": "en",
             "format": "json",
         },
     )
-    results = data.get("results") or []
-    if not results:
-        raise WeatherLookupError(f"No matching city was found for '{city}'.")
-    return results[0]
+    suggestions = []
+    for result in data.get("results") or []:
+        suggestion = _city_suggestion(result)
+        if suggestion:
+            suggestions.append(suggestion)
+
+    if not suggestions:
+        raise WeatherLookupError(
+            f"No city found for '{city}'. Choose a city from the suggestions or check the spelling."
+        )
+
+    target = _city_lookup_key(city)
+    for suggestion in suggestions:
+        if target in {_city_lookup_key(suggestion["name"]), _city_lookup_key(suggestion["label"])}:
+            return suggestion
+
+    raise WeatherLookupError(
+        f"'{city}' is not an exact city match. Choose a city from the suggestions before getting the forecast."
+    )
+
+
+def _validate_city_query(city):
+    if not city:
+        raise WeatherLookupError("Please enter a city name.")
+
+    if not _is_valid_city_query(city):
+        raise WeatherLookupError(
+            "Please enter a valid city name using letters, spaces, commas, periods, hyphens, or apostrophes."
+        )
+
+
+def _is_valid_city_query(city):
+    city = (city or "").strip()
+    allowed_punctuation = {" ", ",", ".", "-", "'"}
+    letter_count = 0
+
+    for character in city:
+        if character.isalpha():
+            letter_count += 1
+        elif character not in allowed_punctuation:
+            return False
+
+    return letter_count >= 2
+
+
+def _city_lookup_key(value):
+    normalized = unicodedata.normalize("NFKD", value or "")
+    return "".join(character.lower() for character in normalized if character.isalnum())
 
 
 def _city_suggestion(location):
